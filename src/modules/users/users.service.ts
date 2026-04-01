@@ -77,6 +77,14 @@ export class UsersService {
         });
     }
 
+    async updatePassword(userId: string, passwordHash: string): Promise<void> {
+        await this.usersRepository.update(userId, {
+            passwordHash,
+            verificationCode: null,
+            verificationCodeExpiresAt: null,
+        });
+    }
+
     async setVerificationCode(userId: string, code: string): Promise<void> {
         await this.usersRepository.update(userId, {
             verificationCode: code,

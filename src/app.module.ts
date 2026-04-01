@@ -12,6 +12,7 @@ import { MissionsModule } from './modules/missions/missions.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { UbigeoModule } from './modules/ubigeo/ubigeo.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
     imports: [
@@ -33,6 +34,9 @@ import { UbigeoModule } from './modules/ubigeo/ubigeo.module';
                 limit: parseInt(process.env.THROTTLE_LIMIT || '100'),
             },
         ]),
+
+        // Global services
+        CommonModule,
 
         // Feature modules
         AuthModule,

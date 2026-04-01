@@ -9,6 +9,9 @@ import { SocialLoginDto } from './dto/social-login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { IsPublic } from '../../common/decorators/is-public.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -41,6 +44,23 @@ export class AuthController {
         return this.authService.verifyEmail(dto.email, dto.code);
     }
 
+    @IsPublic()
+    @Post('forgot-password')
+    @HttpCode(200)
+    @ApiOperation({ summary: 'Request password reset code' })
+    async forgotPassword(@Body() dto: ForgotPasswordDto) {
+        return this.authService.forgotPassword(dto);
+    }
+
+    @IsPublic()
+    @Post('reset-password')
+    @HttpCode(200)
+    @ApiOperation({ summary: 'Reset password with code' })
+    async resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto);
+    }
+
+    @IsPublic()
     @Post('resend-code')
     @HttpCode(200)
     @ApiOperation({ summary: 'Resend email verification code' })

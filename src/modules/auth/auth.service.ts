@@ -7,6 +7,10 @@ import { UsersService } from '../users/users.service';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { MailService } from '../../common/services/mail.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +18,7 @@ export class AuthService {
         private usersService: UsersService,
         private jwtService: JwtService,
         private configService: ConfigService,
+        private mailService: MailService,
         @InjectRepository(RefreshToken)
         private refreshTokenRepository: Repository<RefreshToken>,
     ) { }
@@ -34,7 +39,7 @@ export class AuthService {
             verificationCode,
         );
 
-        // TODO: Send email with verificationCode
+        await this.mailService.sendVerificationCode(registerDto.email, verificationCode);
         console.log(`[EMAIL] Verification code for ${registerDto.email}: ${verificationCode}`);
 
         return {
@@ -78,7 +83,7 @@ export class AuthService {
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
         await this.usersService.setVerificationCode(user.id, verificationCode);
 
-        // TODO: Send email
+        await this.mailService.sendVerificationCode(email, verificationCode);
         console.log(`[EMAIL] Resent verification code for ${email}: ${verificationCode}`);
 
         return { message: 'Nuevo código enviado' };
@@ -115,6 +120,39 @@ export class AuthService {
             user: { ...user, isVerified: true },
             ...tokens,
         };
+    }
+
+    async forgotPassword(dto: ForgotPasswordDto) {
+        const user = await this.usersService.findByEmail(dto.email);
+        if (!user) {
+            // Don't leak user existence?
+            // Actually common to say "Check your email" regardless.
+            return { message: 'Si el correo existe, se ha enviado un código' };
+        }
+
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        await this.usersService.setVerificationCode(user.id, resetCode);
+
+        await this.mailService.sendVerificationCode(user.email, resetCode);
+        console.log(`[EMAIL] Password Reset code for ${user.email}: ${resetCode}`);
+
+        return { message: 'Código de recuperación enviado' };
+    }
+
+    async resetPassword(dto: ResetPasswordDto) {
+        const user = await this.usersService.findByEmail(dto.email);
+        if (!user) {
+            throw new UnauthorizedException('Usuario no encontrado');
+        }
+
+        if (user.verificationCode !== dto.code || user.verificationCodeExpiresAt < new Date()) {
+            throw new UnauthorizedException('Código inválido o expirado');
+        }
+
+        const passwordHash = await bcrypt.hash(dto.password, 10);
+        await this.usersService.updatePassword(user.id, passwordHash);
+
+        return { message: 'Contraseña actualizada exitosamente' };
     }
 
     async login(loginDto: LoginDto) {
