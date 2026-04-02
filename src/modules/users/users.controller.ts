@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Query, UseGuards, ParseIntPipe, Post, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Query, UseGuards, ParseIntPipe, DefaultValuePipe, Post, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery, ApiConsumes, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -109,8 +109,8 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'Paginated list of user check-ins.' })
     async getMyCheckins(
         @CurrentUser() user: any,
-        @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-        @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     ) {
         return this.usersService.getUserCheckins(user.id, page, limit);
     }
@@ -122,8 +122,8 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'Paginated list of followers.' })
     async getMyFollowers(
         @CurrentUser() user: any,
-        @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-        @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     ) {
         return this.usersService.getFollowers(user.id, page, limit);
     }
@@ -135,8 +135,8 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'Paginated list of following users.' })
     async getMyFollowing(
         @CurrentUser() user: any,
-        @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-        @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     ) {
         return this.usersService.getFollowing(user.id, page, limit);
     }

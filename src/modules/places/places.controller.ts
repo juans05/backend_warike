@@ -102,6 +102,20 @@ export class PlacesController {
         return this.placesService.claimPlace(user.id, id, dto);
     }
 
+    @Get(':id/favorite')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Check if place is in favorites' })
+    @ApiParam({ name: 'id', description: 'Place UUID' })
+    @ApiResponse({ status: 200, description: 'Returns isSaved boolean.' })
+    async isFavorite(
+        @CurrentUser() user: any,
+        @Param('id') id: string,
+    ) {
+        const isSaved = await this.placesService.isFavorite(user.id, id);
+        return { isSaved };
+    }
+
     @Post(':id/favorite')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()

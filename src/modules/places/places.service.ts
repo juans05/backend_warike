@@ -271,6 +271,13 @@ export class PlacesService {
         await this.favoritesRepository.save(favorite);
     }
 
+    async isFavorite(userId: string, placeId: string): Promise<boolean> {
+        const existing = await this.favoritesRepository.findOne({
+            where: { userId, placeId },
+        });
+        return existing !== null;
+    }
+
     async removeFavorite(userId: string, placeId: string): Promise<void> {
         const favorite = await this.favoritesRepository.findOne({
             where: { userId, placeId },

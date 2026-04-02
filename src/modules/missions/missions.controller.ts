@@ -10,6 +10,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@ne
 export class MissionsController {
     constructor(private readonly missionsService: MissionsService) { }
 
+    @Get()
+    @ApiOperation({ summary: 'Get missions for current user (flat list)' })
+    @ApiResponse({ status: 200, description: 'Returns array of missions.' })
+    @ApiResponse({ status: 401, description: 'Not authenticated.' })
+    async getMissions(@Request() req) {
+        const missions = await this.missionsService.getDailyMissions(req.user.id);
+        return missions;
+    }
+
     @Get('daily')
     @ApiOperation({ summary: 'Get daily missions for current user' })
     @ApiResponse({ status: 200, description: 'Return list of daily missions and progress.' })

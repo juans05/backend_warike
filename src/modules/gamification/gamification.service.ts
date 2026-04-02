@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Badge } from './entities/badge.entity';
@@ -84,6 +84,58 @@ export class GamificationService {
 
     async findAllBadges(): Promise<Badge[]> {
         return this.badgesRepository.find();
+    }
+
+    async getMyStats(userId: string): Promise<any> {
+        const userResult = await this.pointsLogRepository.query(
+            `SELECT current_level, total_points FROM users WHERE id = $1`,
+            [userId],
+        );
+        const level = parseInt(userResult[0]?.current_level ?? 1);
+        const xp = parseInt(userResult[0]?.total_points ?? 0);
+        const nextLevelXp = level * 1000;
+        const stats = await this.getUserActivityStats(userId);
+        return {
+            level,
+            xp,
+            nextLevelXp,
+            checkinsCount: stats.totalCheckins,
+            reviewsCount: 0,
+            photosCount: 0,
+            videosCount: 0,
+        };
+    }
+
+    async getUserBadges(userId: string): Promise<any[]> {
+        const allBadges = await this.badgesRepository.find();
+        const myBadges = await this.userBadgesRepository.find({ where: { userId } });
+        const myBadgeMap = new Map(myBadges.map((ub) => [ub.badgeId, ub]));
+        return allBadges.map((badge) => ({
+            id: badge.id,
+            name: badge.name,
+            icon: badge.iconUrl || '🏅',
+            description: badge.description,
+            unlockedAt: myBadgeMap.get(badge.id)?.earnedAt ?? null,
+            progress: myBadgeMap.has(badge.id) ? 1 : 0,
+            maxProgress: 1,
+        }));
+    }
+
+    async getBadgeDetail(userId: string, badgeId: string): Promise<any> {
+        const badge = await this.badgesRepository.findOne({ where: { id: badgeId } });
+        if (!badge) throw new NotFoundException('Badge no encontrado');
+        const userBadge = await this.userBadgesRepository.findOne({
+            where: { userId, badgeId },
+        });
+        return {
+            id: badge.id,
+            name: badge.name,
+            icon: badge.iconUrl || '🏅',
+            description: badge.description,
+            unlockedAt: userBadge?.earnedAt ?? null,
+            progress: userBadge ? 1 : 0,
+            maxProgress: 1,
+        };
     }
 
     private async getUserActivityStats(userId: string): Promise<any> {
