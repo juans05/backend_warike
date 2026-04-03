@@ -7,6 +7,8 @@ import {
     ParseFilePipe,
     MaxFileSizeValidator,
     FileTypeValidator,
+    Logger,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes, ApiBody, ApiResponse } from '@nestjs/swagger';
@@ -18,6 +20,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UploadController {
+    private readonly logger = new Logger(UploadController.name);
+
     constructor(private readonly uploadService: UploadService) { }
 
     @Post('image')
@@ -49,10 +53,18 @@ export class UploadController {
         )
         file: Express.Multer.File,
     ) {
-        const result = await this.uploadService.uploadImage(file);
-        return {
-            url: result.secure_url,
-            publicId: result.public_id,
-        };
+        try {
+            const result = await this.uploadService.uploadImage(file);
+            return {
+                url: result.secure_url,
+                publicId: result.public_id,
+            };
+        } catch (error) {
+            this.logger.error('Failed to upload image:', error);
+            throw new InternalServerErrorException({
+                message: 'Error al subir la imagen a Cloudinary',
+                error: error.message || error,
+            });
+        }
     }
 }
